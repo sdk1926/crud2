@@ -17,10 +17,9 @@ class OwnerCreateView(View):
             age = data.get('age', None)
 
             if name and email and age:
-                goodmail = re.compile('^[a-zA-Z0-9+-_.]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
-                checkmail = goodmail.match(email)
-
-                if not checkmail:
+                goodmail = re.match('^[a-zA-Z0-9+-_.]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email)
+                
+                if not goodmail:
                     return JsonResponse({'MESSAGE': 'NOT_EMAIL'}, status=400)
 
                 try:
