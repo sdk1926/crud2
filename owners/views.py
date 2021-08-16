@@ -8,8 +8,8 @@ from .models import Owner, Dog
 from django.db import transaction
 # Create your views here.
 class OwnerCreateView(View):
-
     def post(self, request):
+
         if request.META['CONTENT_TYPE'] == "application/json":
             data = json.loads(request.body)
             name = data.get('name',None)
@@ -40,14 +40,16 @@ class OwnerCreateView(View):
             return JsonResponse({'MESSAGE': 'NOT_JSON'}, status=400)
 
 class DogCreateView(View):
-
     def post(self, request):
+
         if request.META['CONTENT_TYPE'] == "application/json":
             data = json.loads(request.body)
             owner = data.get('owner', None)
             name = data.get('name', None)
             age = data.get('age', None)
+
             if owner and name and age:
+
                 try:
                     owner = Owner.objects.get(name=owner)
                 except:
@@ -70,30 +72,42 @@ class DogCreateView(View):
 
                 
 class OwnerListView(View):
-
     def get(self, request):
         owners = Owner.objects.prefetch_related('owner').all()
-
-        results = [{'name' : owner.name,'email': owner.email,'age': owner.age} for owner in owners]
-        results2 = [{
-            'name' : owner.name,
-            'email': owner.email,
-            'age': owner.age,
-            'dog':[
-                {
+        results = [
+            {
+                'name' : owner.name,
+                'email': owner.email,
+                'age'  : owner.age
+            } for owner in owners
+        ]
+        results2 = [
+            {
+                'name' : owner.name,
+                'email': owner.email,
+                'age'  : owner.age,
+                'dog'  :[
+                    {
                     'name' : dog.name,  
                     'age' : dog.age,
-                }for dog in owner.owner.all()
-            ]
-        }for owner in owners]
-        
+                    }
+                    for dog in owner.owner.all()
+                ]
+            }for owner in owners
+        ]
         return JsonResponse({'result': results,'result2': results2}, status=200)
 
 class DogListView(View):
-
     def get(self, request):
         dogs = Dog.objects.all()
-        results = [{'owner': dog.owner.name, 'name': dog.name, 'age': dog.age}for dog in dogs]
+        results = [
+            {
+                'owner': dog.owner.name,
+                'name' : dog.name,
+                'age'  : dog.age
+            }
+            for dog in dogs
+        ]
         return JsonResponse({'result': results}, status=200)
 
         
