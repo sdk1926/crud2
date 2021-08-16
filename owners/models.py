@@ -7,7 +7,19 @@ class Owner(models.Model):
     email = models.EmailField(max_length=128)
     age = models.IntegerField()
 
+    class Meta:
+        db_table = 'owners'
+
+    def __str__(self):
+        return self.name
+
 class Dog(models.Model):
-    owner = models.ForeignKey(Owner, on_delete=models.SET_NULL, null=True)
+    owner = models.ForeignKey(Owner, on_delete=models.SET_NULL, null=True, related_name='owner')
     name = models.CharField(max_length=45)
     age = models.IntegerField()
+
+    class Meta:
+        db_table = 'dogs'
+
+    def __str__(self):
+        return self.name
