@@ -9,25 +9,26 @@ from django.db import transaction
 # Create your views here.
 class OwnerCreateView(View):
     def post(self, request):
+        if request.META['CONTENT_TYPE'] == "application/json":            
+            try:
+                data  = json.loads(request.body)
+            except:
+                return JsonResponse({'MESSAGE': 'VALUE_ERROR'}, staus=400)
 
-        if request.META['CONTENT_TYPE'] == "application/json":
-            data = json.loads(request.body)
-            name = data.get('name',None)
+            name  = data.get('name',None)
             email = data.get('email', None)
-            age = data.get('age', None)
+            age   = data.get('age', None)
 
             if name and email and age:
                 goodmail = re.match('^[a-zA-Z0-9+-_.]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email)
-                
                 if not goodmail:
                     return JsonResponse({'MESSAGE': 'NOT_EMAIL'}, status=400)
-
                 try:
                     with transaction.atomic():
                         o = Owner(
-                            name = name,
+                            name  = name,
                             email = email,
-                            age = age
+                            age   = age
                         )
                         o.save()
                 except:
@@ -41,26 +42,27 @@ class OwnerCreateView(View):
 
 class DogCreateView(View):
     def post(self, request):
-
         if request.META['CONTENT_TYPE'] == "application/json":
-            data = json.loads(request.body)
+            try:
+                data  = json.loads(request.body)
+            except:
+                return JsonResponse({'MESSAGE': 'VALUE_ERROR'})
+
             owner = data.get('owner', None)
-            name = data.get('name', None)
-            age = data.get('age', None)
+            name  = data.get('name', None)
+            age   = data.get('age', None)
 
             if owner and name and age:
-
                 try:
                     owner = Owner.objects.get(name=owner)
                 except:
                     return JsonResponse({'MESSAGE': 'NO_OWNER'}, status=400)
-
                 try:
                     with transaction.atomic():
                         d = Dog(
-                            owner=owner,
-                            name = name,
-                            age = age
+                            owner = owner,
+                            name  = name,
+                            age   = age
                             )
                         d.save()
                 except:
