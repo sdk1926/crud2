@@ -1,76 +1,65 @@
 from json import encoder
+from json.decoder import JSONDecodeError
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
 import json
 import re
 from django.http     import JsonResponse
 from django.views    import View
 from .models import Owner, Dog
-from django.db import transaction
 # Create your views here.
 class OwnerCreateView(View):
     def post(self, request):
-        if request.META['CONTENT_TYPE'] == "application/json":            
-            try:
-                data  = json.loads(request.body)
-            except:
-                return JsonResponse({'MESSAGE': 'VALUE_ERROR'}, staus=400)
+        try:
+            data     = json.loads(request.body)
+            name     = data['name']
+            email    = data['email']
+            age      = data['age']
+            goodmail = re.match('^[a-zA-Z0-9+-_.]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email)
+                
+            if not goodmail:
+                return JsonResponse({'MESSAGE': 'NOT_EMAIL'}, status=400)
 
-            name  = data.get('name',None)
-            email = data.get('email', None)
-            age   = data.get('age', None)
+            owner = Owner(
+                name  = name,
+                email = email,
+                age   = age
+            )
+            owner.save()
+            return JsonResponse({'MESSAGE': 'CREATED'}, status=201)
+        except ValueError:
+            return JsonResponse({'MESSAGE': 'VALUE_ERROR'}, status=400)
+        except KeyError:
+            return JsonResponse({'MESSAGE': 'KEY_ERROR'}, status=400)
+        
+        
 
-            if name and email and age:
-                goodmail = re.match('^[a-zA-Z0-9+-_.]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email)
-                if not goodmail:
-                    return JsonResponse({'MESSAGE': 'NOT_EMAIL'}, status=400)
-                try:
-                    with transaction.atomic():
-                        o = Owner(
-                            name  = name,
-                            email = email,
-                            age   = age
-                        )
-                        o.save()
-                except:
-                    return JsonResponse({'MESSAGE': 'FAILED'}, status=400)
-                else:
-                    return JsonResponse({'MESSAGE': 'CREATED'}, status=201)
-            else:
-                return JsonResponse({'MESSAGE': 'KEY_ERROR'}, status=400)
-        else:
-            return JsonResponse({'MESSAGE': 'NOT_JSON'}, status=400)
 
 class DogCreateView(View):
     def post(self, request):
-        if request.META['CONTENT_TYPE'] == "application/json":
-            try:
-                data  = json.loads(request.body)
-            except:
-                return JsonResponse({'MESSAGE': 'VALUE_ERROR'})
+        try:
+            data  = json.loads(request.body)
+            owner = data['owner']
+            name  = data['name']
+            age   = data['age']
+            
+            owner = Owner.objects.get(name=owner)
 
-            owner = data.get('owner', None)
-            name  = data.get('name', None)
-            age   = data.get('age', None)
+            dog = Dog(
+                owner = owner,
+                name  = name,
+                age   = age
+            )
+            dog.save()
+            return JsonResponse({'MESSAGE': 'CREATED'}, status=201)
+        except ObjectDoesNotExist:
+            return JsonResponse({'MESSAGE': 'NO_OWNER'}, status=400)
+        except ValueError:
+            return JsonResponse({'MESSAGE': 'VALUE_ERROR'}, status=400)
+        except KeyError:
+            return JsonResponse({'MESSAGE': 'KEY_ERROR'}, status=400)
 
-            if owner and name and age:
-                try:
-                    owner = Owner.objects.get(name=owner)
-                except:
-                    return JsonResponse({'MESSAGE': 'NO_OWNER'}, status=400)
-                try:
-                    with transaction.atomic():
-                        d = Dog(
-                            owner = owner,
-                            name  = name,
-                            age   = age
-                            )
-                        d.save()
-                except:
-                    return JsonResponse({'MESSAGE': 'FAILED'}, status=400)
-                else:    
-                    return JsonResponse({'MESSAGE': 'CREATED'}, status=201)     
-            else:   
-                return JsonResponse({'MESSAGE': 'KEY_ERROR'}, status=400)
+            
 
                 
 class OwnerListView(View):
